@@ -1,7 +1,7 @@
 import os, sys, time
 import subprocess
 import re
-import datetime
+from datetime import datetime
 
 # check if process exists
 def process_exists(proc, ch):
@@ -47,8 +47,7 @@ def run_live(hlsname, pstarget, tunerid, programid, freq, homerunid):
     homeruncmd1='hdhomerun_config ' + homerunid + ' set /tuner' + tunerid + '/channel auto:' + freq
     homeruncmd2='hdhomerun_config ' + homerunid + ' set /tuner' + tunerid + '/program ' + programid + ' transcode=mobile'
     homeruncmd3='hdhomerun_config ' + homerunid + ' set /tuner' + tunerid + '/target ' + pstarget
-
-	logname = 'run_live.log'
+    logname = 'run_live.log'
     if (os.path.exists(dirname) == False):
         writelog(logname, ' does not exists. Creating...\n')  
         os.makedirs(dirname)
@@ -65,7 +64,7 @@ def run_live(hlsname, pstarget, tunerid, programid, freq, homerunid):
     os.system(homeruncmd3)
 
 def writelog(logfilename, content):
-    f = open (logfilename, 'w')
+    f = open (logfilename, 'a')
     f.write (str(datetime.now()) + '|' + content + '\n')
     f.close()
     
