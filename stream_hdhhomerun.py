@@ -1,6 +1,7 @@
 import os, sys, time
 import subprocess
 import re
+import datetime
 
 # check if process exists
 def process_exists(proc, ch):
@@ -47,11 +48,15 @@ def run_live(hlsname, pstarget, tunerid, programid, freq, homerunid):
     homeruncmd2='hdhomerun_config ' + homerunid + ' set /tuner' + tunerid + '/program ' + programid + ' transcode=mobile'
     homeruncmd3='hdhomerun_config ' + homerunid + ' set /tuner' + tunerid + '/target ' + pstarget
 
+	logname = 'run_live.log'
     if (os.path.exists(dirname) == False):
-      os.makedirs(dirname)
+        writelog(logname, ' does not exists. Creating...\n')  
+        os.makedirs(dirname)
     if (os.path.isfile(hlsname) == False):
-      os.system('touch ' + hlsname)
+        writelog(logname, ' does not exists. Creating...\n')  
+      	os.system('touch ' + hlsname)
 
+    writelog(logname, hlsname + ': Starting ffmpeg')
     os.system(ffmpeg_command + ' &')
     # Wait a couple seconds 
     time.sleep (2)
@@ -59,6 +64,12 @@ def run_live(hlsname, pstarget, tunerid, programid, freq, homerunid):
     os.system(homeruncmd2)
     os.system(homeruncmd3)
 
+def writelog(logfilename, content):
+    f = open (logfilename, 'w')
+    f.write (str(datetime.now()) + '|' + content + '\n')
+    f.close()
+    
+logfilename = 'stream.log'
 hlsdir = '/mnt/hls/'
 # Construct informations
 chstruct = []
@@ -69,19 +80,25 @@ chstruct.append({"ch":"ch31", "pstarget":"udp://192.168.2.50:5004", "freq":"5810
 # Used for stagnant m3u8 (may not be needed since we reeencode now)
 time1 = [0,0,0,0]
 time2 = [0,0,0,0]
+
 # Main loop 
 while True:
-  for i in range(0, 4):
-    if (os.path.isfile(chstruct[i]['hlsname'])):
-      time1[i] = os.stat(chstruct[i]['hlsname']).st_mtime
-    if process_exists('ffmpeg', chstruct[i]['ch']) == False:
-      print (chstruct[i]['ch'] + "not running - Start")
-      run_live(chstruct[i]['hlsname'], chstruct[i]['pstarget'], chstruct[i]['tunerid'], chstruct[i]['programid'], chstruct[i]['freq'], chstruct[i]['homerunid'])
-  time.sleep (30)
-  # Now get hls file time and compare to earlier one 
-  for i in range(0, 4):
-    if (os.path.isfile(chstruct[i]['hlsname'])):
-        time2[i] = os.stat(chstruct[i]['hlsname']).st_mtime
-        if (time1[i] == time2[i]):
-          print ('HLS not changed - restart')
-          os.system("kill -9 `ps aux | grep ffmpeg | grep " +  chstruct[i]['hlsname'] + " | awk '{print $2}'`")
+    for i in range(0, 4):
+        if (os.path.isfile(chstruct[i]['hlsname'])):
+            time1[i] = os.stat(chstruct[i]['hlsname']).st_mtime
+        else:
+            time1[i] = 0
+        if process_exists('ffmpeg', chstruct[i]['ch']) == False:
+            writelog( logfilename, chstruct[i]['ch'] + "not running - Starting \n")
+            run_live(chstruct[i]['hlsname'], chstruct[i]['pstarget'], chstruct[i]['tunerid'], chstruct[i]['programid'], chstruct[i]['freq'], chstruct[i]['homerunid'])
+    time.sleep (30)
+    # Now get hls file time and compare to earlier one 
+    for i in range(0, 4):
+        if (os.path.isfile(chstruct[i]['hlsname'])):
+            time2[i] = os.stat(chstruct[i]['hlsname']).st_mtime
+            if (time1[i] == time2[i]):
+                writelog(logfilename, chstruct[i]['ch'] + ' HLS not changed - Restart \n')
+                os.system("kill -9 `ps aux | grep ffmpeg | grep " +  chstruct[i]['hlsname'] + " | awk '{print $2}'`")
+        else:
+            writelog(logfilename, chstruct[i]['ch'] + 'does not exist - Restart\n')
+            os.system("kill -9 `ps aux | grep ffmpeg | grep " +  chstruct[i]['hlsname'] + " | awk '{print $2}'`")
