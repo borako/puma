@@ -88,7 +88,7 @@ while True:
         else:
             time1[i] = 0
         if process_exists('ffmpeg', chstruct[i]['ch']) == False:
-            writelog( logfilename, chstruct[i]['ch'] + "not running - Starting \n")
+            writelog( logfilename, chstruct[i]['ch'] + " ffmpeg process does not exist - Starting \n")
             run_live(chstruct[i]['hlsname'], chstruct[i]['pstarget'], chstruct[i]['tunerid'], chstruct[i]['programid'], chstruct[i]['freq'], chstruct[i]['homerunid'])
     time.sleep (30)
     # Now get hls file time and compare to earlier one 
@@ -96,7 +96,7 @@ while True:
         if (os.path.isfile(chstruct[i]['hlsname'])):
             time2[i] = os.stat(chstruct[i]['hlsname']).st_mtime
             if (time1[i] == time2[i]):
-                writelog(logfilename, chstruct[i]['ch'] + ' HLS not changed - Restart \n')
+                writelog(logfilename, 'time1: ' + time1[i] + ', time2: ' + time2[i] + "- " + chstruct[i]['ch'] + ' HLS not changed - Restart \n')
                 os.system("kill -9 `ps aux | grep ffmpeg | grep " +  chstruct[i]['hlsname'] + " | awk '{print $2}'`")
         else:
             writelog(logfilename, chstruct[i]['ch'] + 'does not exist - Restart\n')
