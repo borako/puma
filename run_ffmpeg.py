@@ -1,3 +1,5 @@
+#!/usr/bin/python
+
 import os, sys, time
 import subprocess
 import re
@@ -13,6 +15,7 @@ def process_exists(proc, ch):
     output = output1.decode('utf-8')
     for line in output.split("\n"):
         writelog ( '/home/blee/py/python_run_check.log', line )
+    for line in output.split("\n"):
         if line != "" and line != None:
             fields = line.split()
             if fields[7] == proc:
@@ -24,8 +27,11 @@ def writelog(logfilename, content):
     f.write (str(datetime.now()) + '|' + content + '\n')
     f.close()
 
-if process_exists('python', 'stream_hdhomerun'):
-    writelog('/home/blee/py/python_run_check.log', 'Python process exists')
-else:
+if process_exists('/usr/bin/python', 'stream_hdhomerun') == False:
     writelog('/home/blee/py/python_run_check.log', 'Python dead - restarting')
-    os.system('python /home/blee/py/stream_hdhomerun.py')
+    #os.system('python /home/blee/py/stream_hdhomerun.py &')
+    subprocess.Popen('/home/blee/py/stream_hdhomerun.py 1', shell=True, stdout=subprocess.PIPE)
+#delte cron.log if > 100M in size
+cronlog = '/home/blee/py/run-cron.log'
+if os.stat(cronlog).st_size > 100000000
+    os.remove(cronlog)
