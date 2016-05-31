@@ -24,9 +24,8 @@ def writelog(logfilename, content):
     f.write (str(datetime.now()) + '|' + content + '\n')
     f.close()
 
-if process_exists('python', 'stream'):
+if process_exists('python', 'stream_hdhomerun'):
     writelog('/home/blee/py/python_run_check.log', 'Python process exists')
 else:
     writelog('/home/blee/py/python_run_check.log', 'Python dead - restarting')
-    os.system('python stream_hdhomerun.py \&')
-    print ('False')
+    os.system('python /home/blee/py/stream_hdhomerun.py')
