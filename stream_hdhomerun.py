@@ -52,7 +52,8 @@ def run_live(hlsname, pstarget, tunerid, programid, freq, homerunid):
     homeruncmd3='/usr/local/bin/hdhomerun_config ' + homerunid + ' set /tuner' + tunerid + '/target ' + pstarget
     writelog(logfilename, 'Deleting ' + dirname )
     #os.system('rm -f ' + dirname + '/*')
-    subprocess.Popen('rm -f ' + dirname + '/*', shell=True, stdout=subprocess.PIPE)
+    #subprocess.Popen('rm -f ' + dirname + '/*', shell=True, stdout=subprocess.PIPE)
+    subprocess.Popen('rm -f ' + dirname + '/*', shell=True)
     if (os.path.exists(dirname) == False):
         writelog(logfilename, dirname + ' does not exists. Creating...\n')  
         os.makedirs(dirname)
@@ -62,17 +63,14 @@ def run_live(hlsname, pstarget, tunerid, programid, freq, homerunid):
 
     writelog(logfilename, hlsname + ': Starting ffmpeg')
     #os.system(ffmpeg_command + ' &')
-    subprocess.Popen(ffmpeg_command, shell=True, stdout=subprocess.PIPE)
+    #subprocess.Popen(ffmpeg_command, shell=True, stdout=subprocess.PIPE)
+    subprocess.Popen(ffmpeg_command, shell=True)
     # Wait a couple seconds 
     time.sleep (2)
     subprocess.Popen(homeruncmd1, shell=True, stdout=subprocess.PIPE)
     subprocess.Popen(homeruncmd2, shell=True, stdout=subprocess.PIPE)
     subprocess.Popen(homeruncmd3, shell=True, stdout=subprocess.PIPE)
-'''
-    os.system(homeruncmd1)
-    os.system(homeruncmd2)
-    os.system(homeruncmd3)
-'''
+
 def writelog(logfilename, content):
     f = open (logfilename, 'a')
     f.write (str(datetime.now()) + '|' + content + '\n')
@@ -84,14 +82,6 @@ jsonfile = '/home/blee/py/channeldic.json'
 # Construct informations
 with open(jsonfile) as df:
     chstruct = json.load(df)
-'''
-chstruct = []
-chstruct.append({"ch":"ch04", "pstarget":"udp://192.168.2.50:5003", "freq":"599000000", "homerunid":"1052C840", "tunerid":"0", "programid":"1", "hlsname":"/mnt/hls/ch04/ch04.m3u8"})
-chstruct.append({"ch":"ch07", "pstarget":"udp://192.168.2.50:5002", "freq":"177000000", "homerunid":"1052982E", "tunerid":"1", "programid":"3", "hlsname":"/mnt/hls/ch07/ch07.m3u8"})
-chstruct.append({"ch":"ch09", "pstarget":"udp://192.168.2.50:5001", "freq":"189000000", "homerunid":"1052982E", "tunerid":"0", "programid":"1", "hlsname":"/mnt/hls/ch09/ch09.m3u8"})
-chstruct.append({"ch":"ch31", "pstarget":"udp://192.168.2.50:5004", "freq":"581000000", "homerunid":"1052C840", "tunerid":"1", "programid":"3", "hlsname":"/mnt/hls/ch31/ch31.m3u8"})
-'''
-# Used for stagnant m3u8 (may not be needed since we reeencode now)
 time1 = [0,0,0,0]
 time2 = [0,0,0,0]
 
@@ -102,7 +92,7 @@ while True:
             time1[i] = os.stat(chstruct[i]['hlsname']).st_mtime
         else:
             time1[i] = 0
-            writelog( logfilename, chstruct[i]['hlsname'] + " process does not exist \n")
+            writelog( logfilename, chstruct[i]['hlsname'] + " file does not exist \n")
         if process_exists('ffmpeg', chstruct[i]['ch']) == False:
             writelog( logfilename, chstruct[i]['ch'] + " ffmpeg process does not exist - Starting \n")
             run_live(chstruct[i]['hlsname'], chstruct[i]['pstarget'], chstruct[i]['tunerid'], chstruct[i]['programid'], chstruct[i]['freq'], chstruct[i]['homerunid'])
@@ -115,5 +105,5 @@ while True:
                 writelog(logfilename, 'time1: ' + str(time1[i]) + ', time2: ' + str(time2[i]) + "- " + chstruct[i]['ch'] + ' HLS not changed - Restart \n')
                 os.system("kill -9 `ps aux | grep ffmpeg | grep " +  chstruct[i]['hlsname'] + " | awk '{print $2}'`")
         else:
-            writelog(logfilename, chstruct[i]['ch'] + 'does not exist - Restart\n')
+            writelog(logfilename, chstruct[i]['ch'] + ' does not exist - Restart\n')
             os.system("kill -9 `ps aux | grep ffmpeg | grep " +  chstruct[i]['hlsname'] + " | awk '{print $2}'`")
