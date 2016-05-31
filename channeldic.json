@@ -1,0 +1,38 @@
+[
+{
+"ch": "ch04", 
+"programid": "1", 
+"tunerid": "0", 
+"homerunid": "1052C840", 
+"freq": "599000000", 
+"pstarget": "udp://192.168.2.50:5003", 
+"hlsname": "/mnt/hls/ch04/ch04.m3u8"
+}, 
+{
+"ch": "ch07", 
+"programid": "3", 
+"tunerid": "1", 
+"homerunid": "1052982E", 
+"freq": "177000000", 
+"pstarget": "udp://192.168.2.50:5002", 
+"hlsname": "/mnt/hls/ch07/ch07.m3u8"
+}, 
+{
+"ch": "ch09", 
+"programid": "1", 
+"tunerid": "0", 
+"homerunid": "1052982E", 
+"freq": "189000000", 
+"pstarget": "udp://192.168.2.50:5001", 
+"hlsname": "/mnt/hls/ch09/ch09.m3u8"
+}, 
+{
+"ch": "ch31", 
+"programid": "3", 
+"tunerid": "1", 
+"homerunid": "1052C840", 
+"freq": "581000000", 
+"pstarget": "udp://192.168.2.50:5004", 
+"hlsname": "/mnt/hls/ch31/ch31.m3u8"
+}
+]
