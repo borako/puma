@@ -52,9 +52,6 @@ def run_live(hlsname, pstarget, tunerid, programid, freq, homerunid):
         hlsname 
         #' -loglevel ' + loglevel 
 
-    writelog(logfilename, 'cmd1: ' + homeruncmd1)
-    writelog(logfilename, 'cmd2: ' + homeruncmd2)
-    writelog(logfilename, 'cmd3: ' + homeruncmd3)
     writelog(logfilename, 'Deleting ' + dirname )
     #os.system('rm -f ' + dirname + '/*')
     #subprocess.Popen('rm -f ' + dirname + '/*', shell=True, stdout=subprocess.PIPE)
