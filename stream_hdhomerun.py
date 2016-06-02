@@ -52,9 +52,9 @@ def run_live(hlsname, pstarget, tunerid, programid, freq, homerunid):
         hlsname 
         #' -loglevel ' + loglevel 
 
-    homeruncmd1='/usr/local/bin/hdhomerun_config ' + homerunid + ' set /tuner' + tunerid + '/channel auto:' + freq
-    homeruncmd2='/usr/local/bin/hdhomerun_config ' + homerunid + ' set /tuner' + tunerid + '/program ' + programid + ' transcode=mobile'
-    homeruncmd3='/usr/local/bin/hdhomerun_config ' + homerunid + ' set /tuner' + tunerid + '/target ' + pstarget
+    writelog(logfilename, 'cmd1: ' + homeruncmd1)
+    writelog(logfilename, 'cmd2: ' + homeruncmd2)
+    writelog(logfilename, 'cmd3: ' + homeruncmd3)
     writelog(logfilename, 'Deleting ' + dirname )
     #os.system('rm -f ' + dirname + '/*')
     #subprocess.Popen('rm -f ' + dirname + '/*', shell=True, stdout=subprocess.PIPE)
@@ -68,13 +68,12 @@ def run_live(hlsname, pstarget, tunerid, programid, freq, homerunid):
 
     writelog(logfilename, hlsname + ': Starting ffmpeg')
     #os.system(ffmpeg_command + ' &')
-    #subprocess.Popen(ffmpeg_command, shell=True, stdout=subprocess.PIPE)
     subprocess.Popen(ffmpeg_command, shell=True)
     # Wait a couple seconds 
     time.sleep (2)
-    subprocess.Popen(homeruncmd1, shell=True, stdout=subprocess.PIPE)
-    subprocess.Popen(homeruncmd2, shell=True, stdout=subprocess.PIPE)
-    subprocess.Popen(homeruncmd3, shell=True, stdout=subprocess.PIPE)
+    subprocess.call(['/usr/local/bin/hdhomerun_config', homerunid, 'set', '/tuner' + tunerid + '/channel', 'auto:'+freq])
+    subprocess.call(['/usr/local/bin/hdhomerun_config', homerunid, 'set', '/tuner' + tunerid + '/program', programid, 'transcode=mobile'])
+    subprocess.call(['/usr/local/bin/hdhomerun_config', homerunid, 'set', '/tuner' + tunerid + '/target', pstarget])
 
 def writelog(logfilename, content):
     f = open (logfilename, 'a')
