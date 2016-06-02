@@ -13,6 +13,10 @@ def process_exists(proc, ch):
     output1 = ps.stdout.read()
     ps.stdout.close()
     ps.wait()
+    try:
+        ps.kill()
+    except OSError:
+        pass
     output = output1.decode('utf-8')
     for line in output.split("\n"):
         print ( line )
@@ -37,9 +41,10 @@ def run_live(hlsname, pstarget, tunerid, programid, freq, homerunid):
     hlstime = '10'
     hlssize = '8'
     loglevel = 'debug'
+    preset = 'superfast' #ultrafast,superfast, veryfast, faster, fast, medium, slow
     
     ffmpeg_command = 'ffmpeg -re -i ' + pstarget + '?fifo_size=1000000\&buffer_size=128000' + \
-        ' -c:v libx264 -preset veryfast -async 1 -y -vsync 1 -f hls ' + \
+        ' -c:v libx264 -preset ' + preset + '  -async 1 -y -vsync 1 -f hls ' + \
         ' -hls_time ' + hlstime + \
         ' -hls_list_size ' + hlssize + \
         ' -hls_flags delete_segments ' + \
@@ -87,7 +92,7 @@ time2 = [0,0,0,0]
 
 # Main loop 
 while True:
-    for i in range(0, 4):
+    for i in range(len(chstruct)):
         if (os.path.isfile(chstruct[i]['hlsname'])):
             time1[i] = os.stat(chstruct[i]['hlsname']).st_mtime
         else:
@@ -98,7 +103,7 @@ while True:
             run_live(chstruct[i]['hlsname'], chstruct[i]['pstarget'], chstruct[i]['tunerid'], chstruct[i]['programid'], chstruct[i]['freq'], chstruct[i]['homerunid'])
     time.sleep (30)
     # Now get hls file time and compare to earlier one 
-    for i in range(0, 4):
+    for i in range(len(chstruct)):
         if (os.path.isfile(chstruct[i]['hlsname'])):
             time2[i] = os.stat(chstruct[i]['hlsname']).st_mtime
             if (time1[i] == time2[i]):
