@@ -1,34 +1,12 @@
 #!/usr/bin/python
 
+import pumautils
 import os, sys, time
 import subprocess
 import re
 from datetime import datetime
 import json
-
-# check if process exists
-def process_exists(proc, ch):
-    ps = subprocess.Popen("ps -ef | grep "+proc+ " | grep " + ch, shell=True, stdout=subprocess.PIPE)
-    ps_pid = ps.pid
-    output1 = ps.stdout.read()
-    ps.stdout.close()
-    ps.wait()
-    try:
-        ps.kill()
-    except OSError:
-        pass
-    output = output1.decode('utf-8')
-    for line in output.split("\n"):
-        print ( line )
-#    if output1 is None:
-    for line in output.split("\n"):
-        #line = line.decode('utf-8')
-        if line != "" and line != None:
-            print ("line: " + line )
-            fields = line.split()
-            if fields[7] == proc:
-                return True
-    return False
+from pumautils import writelog, process_exists, kill_proc
 
 # Transcode and stream HDHomeRun source to HLS
 # ch: ch04 ch07 ch12 ch31 etc
@@ -36,47 +14,35 @@ def process_exists(proc, ch):
 # tunerid: Tuner id (0 or 1) for the HDHomerun unit
 # programid: Program ID for the frequency tuned
 # homerunid: HDHomeRun unit ID
-def run_live(hlsname, pstarget, tunerid, programid, freq, homerunid):
-    dirname = os.path.dirname(hlsname)
+#def run_live(hlsname, pstarget, tunerid, programid, freq, homerunid):
+def run_live(ch):
+    dirname = os.path.dirname(ch['hlsname'])
     hlstime = '10'
     hlssize = '8'
     loglevel = 'debug'
     preset = 'superfast' #ultrafast,superfast, veryfast, faster, fast, medium, slow
-    
-    ffmpeg_command = 'ffmpeg -re -i ' + pstarget + '?fifo_size=1000000\&buffer_size=128000' + \
-        ' -c:v libx264 -preset ' + preset + '  -async 1 -y -vsync 1 -f hls ' + \
-        ' -hls_time ' + hlstime + \
-        ' -hls_list_size ' + hlssize + \
-        ' -hls_flags delete_segments ' + \
-        ' -hls_allow_cache 1 ' + \
-        hlsname 
-        #' -loglevel ' + loglevel 
-
+    ffmpgcmd = 'ffmpeg -re -i ' + ch['pstarget'] + '?fifo_size=1000000\&buffer_size=128000' + \
+        ' -c:v libx264 -preset ' + preset + \
+        ' -f hls -hls_time 10 -hls_list_size 8 -hls_flags delete_segments -hls_allow_cache 1 ' + \
+        ch['hlsname'] + ' &'
     writelog(logfilename, 'Deleting ' + dirname )
-    #os.system('rm -f ' + dirname + '/*')
-    #subprocess.Popen('rm -f ' + dirname + '/*', shell=True, stdout=subprocess.PIPE)
-    subprocess.Popen('rm -f ' + dirname + '/*', shell=True)
+    subprocess.call(["rm", "-f", dirname + "/*"])
     if (os.path.exists(dirname) == False):
-        writelog(logfilename, dirname + ' does not exists. Creating...\n')  
+        writelog(logfilename, dirname + ' does not exists. Creating...')  
         os.makedirs(dirname)
-    if (os.path.isfile(hlsname) == False):
-        writelog(logfilename, hlsname + ' does not exists. Creating...\n')  
-      	os.system('touch ' + hlsname)
+    if (os.path.isfile(ch['hlsname']) == False):
+        writelog(logfilename, ch['hlsname'] + ' does not exists. Creating...')  
+      	os.system('touch ' + ch['hlsname'])
 
-    writelog(logfilename, hlsname + ': Starting ffmpeg')
-    #os.system(ffmpeg_command + ' &')
-    subprocess.Popen(ffmpeg_command, shell=True)
+    writelog(logfilename, ch['hlsname'] + ': Starting ffmpeg')
+    subprocess.Popen(ffmpgcmd, shell=True)
     # Wait a couple seconds 
     time.sleep (2)
-    subprocess.call(['/usr/local/bin/hdhomerun_config', homerunid, 'set', '/tuner' + tunerid + '/channel', 'auto:'+freq])
-    subprocess.call(['/usr/local/bin/hdhomerun_config', homerunid, 'set', '/tuner' + tunerid + '/program', programid, 'transcode=mobile'])
-    subprocess.call(['/usr/local/bin/hdhomerun_config', homerunid, 'set', '/tuner' + tunerid + '/target', pstarget])
+    # HDHomerun commands
+    subprocess.call(['/usr/local/bin/hdhomerun_config', ch['homerunid'], 'set', '/tuner' + ch['tunerid'] + '/channel', 'auto:'+ch['freq']])
+    subprocess.call(['/usr/local/bin/hdhomerun_config', ch['homerunid'], 'set', '/tuner' + ch['tunerid'] + '/program', ch['programid'], 'transcode=mobile'])
+    subprocess.call(['/usr/local/bin/hdhomerun_config', ch['homerunid'], 'set', '/tuner' + ch['tunerid'] + '/target', ch['pstarget']])
 
-def writelog(logfilename, content):
-    f = open (logfilename, 'a')
-    f.write (str(datetime.now()) + '|' + content + '\n')
-    f.close()
-    
 logfilename = 'stream.log'
 hlsdir = '/mnt/hls/'
 jsonfile = '/home/blee/py/channeldic.json'
@@ -93,18 +59,20 @@ while True:
             time1[i] = os.stat(chstruct[i]['hlsname']).st_mtime
         else:
             time1[i] = 0
-            writelog( logfilename, chstruct[i]['hlsname'] + " file does not exist \n")
-        if process_exists('ffmpeg', chstruct[i]['ch']) == False:
-            writelog( logfilename, chstruct[i]['ch'] + " ffmpeg process does not exist - Starting \n")
-            run_live(chstruct[i]['hlsname'], chstruct[i]['pstarget'], chstruct[i]['tunerid'], chstruct[i]['programid'], chstruct[i]['freq'], chstruct[i]['homerunid'])
+            writelog( logfilename, chstruct[i]['hlsname'] + " file does not exist")
+            if not process_exists('ffmpeg', chstruct[i]['ch']):
+                writelog( logfilename, chstruct[i]['ch'] + " ffmpeg process does not exist - Starting ")
+                run_live(chstruct[i])
     time.sleep (30)
     # Now get hls file time and compare to earlier one 
     for i in range(len(chstruct)):
         if (os.path.isfile(chstruct[i]['hlsname'])):
             time2[i] = os.stat(chstruct[i]['hlsname']).st_mtime
+            # If HLS file has not changed in last 30 seconds, restart
             if (time1[i] == time2[i]):
-                writelog(logfilename, 'time1: ' + str(time1[i]) + ', time2: ' + str(time2[i]) + "- " + chstruct[i]['ch'] + ' HLS not changed - Restart \n')
-                os.system("kill -9 `ps aux | grep ffmpeg | grep " +  chstruct[i]['hlsname'] + " | awk '{print $2}'`")
+                writelog(logfilename, 'time1: ' + str(time1[i]) + ', time2: ' + str(time2[i]) + "- " + chstruct[i]['ch'] + ' HLS not changed - Restart')
+                kill_proc("ffmpeg", chstruct[i]['hlsname'])
         else:
-            writelog(logfilename, chstruct[i]['ch'] + ' does not exist - Restart\n')
-            os.system("kill -9 `ps aux | grep ffmpeg | grep " +  chstruct[i]['hlsname'] + " | awk '{print $2}'`")
+            writelog(logfilename, chstruct[i]['ch'] + ' does not exist - Restart')
+            # Kill FFMPEG process if exists
+            kill_proc("ffmpeg", chstruct[i]['hlsname'])
