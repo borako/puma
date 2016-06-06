@@ -1,5 +1,4 @@
-
-import os, subprocess
+import os, subprocess, signal
 from datetime import datetime
 
 # check if process exists. Returns True only if process name matches
@@ -31,9 +30,12 @@ def kill_proc(*arg):
         fields = line.split()
         pid = fields[0]
         os.kill(int(pid), signal.SIGKILL)
+    return True
 
+# Write log to a file
 def writelog(logfilename, content):
     f = open (logfilename, 'a')
     f.write (str(datetime.now()) + '|' + content + '\n')
     f.close()
+    return True
     
